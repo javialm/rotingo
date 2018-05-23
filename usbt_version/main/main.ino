@@ -5,7 +5,6 @@
 
 #define MAX_SENSORES    1 // Numero de sensores
 #define PING_INTERVAL 33
-#define PING_CORRIENTE 10
 unsigned long pingTimer[MAX_SENSORES];
 unsigned int cm[MAX_SENSORES];
 uint8_t currentSensor = 0;
@@ -46,12 +45,10 @@ void setup() {
   Serial.begin(9600); // Default communication rate of the Bluetooth module
 
   /*###### HC-SR04 ######*/
-  pinMode(PING_CORRIENTE, OUTPUT);
-  digitalWrite(PING_CORRIENTE, HIGH);
   pingTimer[0] = millis() + 75;
   for (uint8_t i = 1; i < MAX_SENSORES; i++)
     pingTimer[i] = pingTimer[i - 1] + PING_INTERVAL;
-  forward();
+  
 }
 
 /*######################### LOOP ##############################*/
@@ -62,7 +59,21 @@ void loop() { /*main*/
   state = "";
   while (Serial.available() > 0) { // Checks whether data is comming from the serial port
     aux = Serial.read(); // Reads the data from the serial port
-
+    Serial.println("Aux: ");
+    Serial.print(aux);
+    /*=== BLUETOOTH MODE CONTROL ===*/
+    if (aux == 'X') {
+      mode = 0;
+      Serial.println ( "BLUETOOTH" );
+    }
+    else if (aux == 'Y') {
+      Serial.println ( "YYYYYYYYYYY" );
+      mode = 1;
+    }
+    else if (aux == 'S') {
+      mode = 2;
+    }
+    
     if (aux == '\r') {
       continue;
     }
@@ -78,19 +89,16 @@ void loop() { /*main*/
 
   Serial.print(state);
   if (newline) {
+    Serial.println("state: ");
     Serial.print(state);
   }
 
-  /*=== BLUETOOTH MODE CONTROL ===*/
-  if (state == '0') {
-    mode = 0;
-  }
-  else if (state == '1') {
-    mode = 1;
-  }
+  
 
   if (mode == 1) {
     /*###### HC-SR04 ######*/
+    //Serial.println("MODO ULTRASONIDOS ACTIVADO...");
+    
     for (uint8_t i = 0; i < MAX_SENSORES; i++)
     {
       if (millis() >= pingTimer[i])
@@ -105,8 +113,16 @@ void loop() { /*main*/
     }
   }
 
+  if (mode == 2) {
+    /*###### STOP ######*/
+    //Serial.println("MODO STOP...");
+    staphPlz();
+  }
+
   if (mode == 0) { //bluetooth mode
     /*=== BLUETOOTH SWITCH CASE ===*/
+    //Serial.println("MODO BLUETOOTH ACTIVADO...");
+    
     if (state == "A") {
       Serial.println("ALANTE");
       forward();
